@@ -7,7 +7,7 @@ import axios from "axios";
 import { motion } from "motion/react";
 import { IoCloseCircleOutline } from "react-icons/io5";
 
-export default function Navbar({ onSearch, setPage }) {
+export default function Navbar({ onSearch, setPage, cartCount, onCartClick }) {
   const [input, setInput] = useState("");
   const [user, setUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -134,12 +134,15 @@ export default function Navbar({ onSearch, setPage }) {
 
           <button
             title="Cart"
+            onClick={onCartClick}
             className="hover:text-gray-300 hover:scale-108 transition-colors relative"
           >
             <FaCartShopping size={20} />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-xs text-white w-5 h-5 flex items-center justify-center rounded-full">
-              2
-            </span>
+            {cartCount >= 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-xs text-white w-5 h-5 flex items-center justify-center rounded-full">
+                {cartCount}
+              </span>
+            )}
           </button>
 
           <button
@@ -188,7 +191,7 @@ export default function Navbar({ onSearch, setPage }) {
 
                 <Link
                   className="w-full block text-center"
-                  to="/order"
+                  to="/orders"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

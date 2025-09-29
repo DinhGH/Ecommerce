@@ -12,8 +12,8 @@ import {
   Phone,
 } from "lucide-react";
 import { IoLogoGoogle, IoLogoFacebook } from "react-icons/io5";
-import { TbHomeMove } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
+import { TbHomeMove } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import { ElegantSpinner } from "../components/ui/Loading";
 import { useNavigate } from "react-router-dom";
@@ -118,6 +118,7 @@ const LoginForm = () => {
       );
       if (res.status == 201) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
+
         if (res.data.role === "ADMIN") {
           navigate("/admin");
         } else {
@@ -199,7 +200,7 @@ const LoginForm = () => {
             </label>
 
             <button
-              onClick={() => alert("Forgot password feature")}
+              onClick={() => navigate("/forgot-password")}
               className="text-sm text-gray-700 hover:text-black hover:underline"
             >
               Forgot password?

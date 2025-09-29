@@ -1,196 +1,214 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import { ElegantSpinner } from "../components/ui/Loading";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  //   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
 
-  // Giả sử userId lấy từ token hoặc context
-  const userId = localStorage.getItem("userId");
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    age: "",
+    gender: "",
+    avatar: "",
+  });
 
-  // Lấy thông tin user
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
-      setFormData({
-        fullName: storedUser.fullName || "",
-        email: storedUser.email || "",
-        phone: storedUser.phone || "",
-        address: storedUser.address || "",
-        age: storedUser.age || "",
-        gender: storedUser.gender || "",
-        avatar: storedUser.avatar || "",
-      });
-    }
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/auth/user/me", {
+          withCredentials: true,
+        });
+
+        if (res.data.success) {
+          setUser(res.data.user);
+          setFormData({
+            fullName: res.data.user.fullName || "",
+            email: res.data.user.email || "",
+            phone: res.data.user.phone || "",
+            address: res.data.user.address || "",
+            age: res.data.user.age || "",
+            gender: res.data.user.gender || "",
+            avatar: res.data.user.avatar || "",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleUpdate = async () => {
     try {
+      const data = new FormData();
+      Object.keys(formData).forEach((key) => {
+        data.append(key, formData[key]);
+      });
+      if (avatarFile) {
+        data.append("avatarFile", avatarFile);
+      }
+
       const res = await axios.put(
-        `http://localhost:5000/api/user/${userId}`,
-        formData
+        "http://localhost:5000/auth/user/update",
+        data,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
-      setUser(res.data);
-      setEditing(false);
-      alert("Cập nhật thành công!");
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert("Cập nhật thất bại!");
+
+      if (res.data.success) {
+        alert("Profile updated successfully!");
+        setUser(res.data.user);
+        setFormData({
+          ...formData,
+          avatar: res.data.user.avatar ? res.data.user.avatar : "",
+        });
+        setEditMode(false);
+        setAvatarFile(null);
+      } else {
+        alert("Update failed!");
+      }
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Error updating profile");
     }
   };
 
-  if (!user) return <div className="text-white p-6">Loading...</div>;
+  if (loading) return <ElegantSpinner />;
+  if (!user) return <p>User not found</p>;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">Profile</h1>
-
-      {/* User Info */}
-      <div className="bg-gray-800 p-6 rounded-xl shadow-lg mb-8 max-w-3xl">
-        <div className="flex items-center gap-6 mb-4">
-          <img
-            src={formData.avatar || "/default-avatar.png"}
-            alt="Avatar"
-            className="w-24 h-24 rounded-full object-cover border-2 border-gray-700"
-          />
-          <div>
-            {editing ? (
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="bg-gray-700 p-2 rounded w-full text-white"
-              />
-            ) : (
-              <h2 className="text-2xl font-semibold">{user.fullName}</h2>
-            )}
-            <p className="text-gray-400">{user.email}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            Phone
-            {editing ? (
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="bg-gray-700 p-2 rounded text-white"
-              />
-            ) : (
-              <span className="text-gray-300">{user.phone || "-"}</span>
-            )}
-          </label>
-
-          <label className="flex flex-col">
-            Address
-            {editing ? (
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="bg-gray-700 p-2 rounded text-white"
-              />
-            ) : (
-              <span className="text-gray-300">{user.address || "-"}</span>
-            )}
-          </label>
-
-          <label className="flex flex-col">
-            Age
-            {editing ? (
-              <input
-                type="number"
-                name="age"
-                value={formData.age}
-                onChange={handleChange}
-                className="bg-gray-700 p-2 rounded text-white"
-              />
-            ) : (
-              <span className="text-gray-300">{user.age || "-"}</span>
-            )}
-          </label>
-
-          <label className="flex flex-col">
-            Gender
-            {editing ? (
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="bg-gray-700 p-2 rounded text-white"
-              >
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            ) : (
-              <span className="text-gray-300">{user.gender || "-"}</span>
-            )}
-          </label>
-        </div>
-
-        <div className="mt-4 flex gap-4">
-          {editing ? (
-            <>
-              <button
-                onClick={handleUpdate}
-                className="bg-green-600 px-4 py-2 rounded hover:bg-green-700 transition"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="bg-gray-600 px-4 py-2 rounded hover:bg-gray-500 transition"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Edit Profile
-            </button>
-          )}
-        </div>
+    <div className="max-w-2xl mx-auto p-6 m-5 bg-white shadow-xl rounded">
+      <div className="flex justify-between">
+        <h2 className="text-2xl font-bold mb-4">My Profile</h2>
+        <a href="/" className="text-2xl font-bold mb-4 hover:underline">
+          Home
+        </a>
+      </div>
+      {/* Avatar Upload */}
+      <div>
+        <label className="block font-medium">Avatar</label>
+        <input
+          type="file"
+          accept="image/*"
+          disabled={!editMode}
+          onChange={(e) => setAvatarFile(e.target.files[0] || null)}
+        />
+        <img
+          src={
+            avatarFile
+              ? URL.createObjectURL(avatarFile)
+              : formData.avatar || "https://via.placeholder.com/100"
+          }
+          alt="avatar preview"
+          className="w-24 h-24 object-cover mt-2 rounded-full"
+        />
       </div>
 
-      {/* User Orders / Dashboard */}
-      {/* <div className="max-w-4xl">
-        <h2 className="text-2xl font-bold mb-4">Your Orders</h2>
-        {orders.length === 0 ? (
-          <p className="text-gray-400">You have no orders yet.</p>
+      {/* Form Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <input
+          type="text"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
+          disabled={!editMode}
+          placeholder="Full Name"
+          className="border px-3 py-2 rounded"
+        />
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          disabled={!editMode}
+          placeholder="Email"
+          className="border px-3 py-2 rounded"
+        />
+        <input
+          type="text"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          disabled={!editMode}
+          placeholder="Phone"
+          className="border px-3 py-2 rounded"
+        />
+        <input
+          type="text"
+          name="address"
+          value={formData.address}
+          onChange={handleChange}
+          disabled={!editMode}
+          placeholder="Address"
+          className="border px-3 py-2 rounded"
+        />
+        <input
+          type="number"
+          name="age"
+          value={formData.age}
+          onChange={handleChange}
+          disabled={!editMode}
+          placeholder="Age"
+          className="border px-3 py-2 rounded"
+        />
+        <select
+          name="gender"
+          value={formData.gender}
+          onChange={handleChange}
+          disabled={!editMode}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Select Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      {/* Buttons */}
+      <div className="mt-6 flex ">
+        {editMode ? (
+          <>
+            <button
+              onClick={handleUpdate}
+              className="bg-[#333] mx-2 hover:bg-[#1d1d1d] text-white px-4 py-2 rounded-lg"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => {
+                setEditMode(false);
+                setAvatarFile(null);
+              }}
+              className="bg-gray-400 mx-2 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+            >
+              Cancel
+            </button>
+          </>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-gray-800 p-4 rounded-lg shadow hover:scale-102 transition"
-              >
-                <h3 className="font-semibold mb-2">{order.productName}</h3>
-                <p>Price: ${order.finalPrice}</p>
-                <p>Quantity: {order.quantity}</p>
-                <p>Status: {order.status}</p>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={() => setEditMode(true)}
+            className="bg-[#333] hover:bg-[#1d1d1d] text-white px-4 py-2 rounded-lg"
+          >
+            Edit Profile
+          </button>
         )}
-      </div> */}
+      </div>
     </div>
   );
 }

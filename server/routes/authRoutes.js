@@ -7,6 +7,7 @@ const {
 } = require("../controllers/authController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const router = express.Router();
+const upload = require("../middlewares/upload");
 
 router.post("/loginUser", authController.login);
 router.post("/createUser", authController.register);
@@ -36,6 +37,16 @@ router.get(
 );
 
 router.get("/me", authMiddleware, authController.getUserInfo);
+router.put(
+  "/update",
+  authMiddleware,
+  upload.single("avatarFile"),
+  authController.updateProfile
+);
+
+router.post("/forgot-password", authController.forgotPassword);
+
+router.put("/reset-password", authController.resetPassword);
 
 // router.put();
 

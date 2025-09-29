@@ -17,16 +17,59 @@ import {
   ShoppingCart,
   CreditCard,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Announcement from "./Announcement";
 
-export default function ProductCardDetail({ product, onClose }) {
+export default function ProductCardDetail({ product, onClose, onCartUpdate }) {
+  const [announcement, setAnnouncement] = useState(0);
   if (!product) return null;
 
   const [mainImage, setMainImage] = useState(product.thumbnail);
+  const navigate = useNavigate();
 
   // Tính giá sau giảm
   const discountedPrice = product.discountPercentage
     ? (product.price * (1 - product.discountPercentage / 100)).toFixed(2)
     : product.price;
+
+  const fetchQuantity = async () => {
+    axios
+      .get("http://localhost:5000/api/cart", { withCredentials: true })
+      .then((res) => {
+        const total = res.data.reduce((sum, item) => sum + item.quantity, 0);
+        onCartUpdate(total);
+      })
+      .catch((err) => console.error(err));
+  };
+
+  const handleAddToCart = async () => {
+    const user = localStorage.getItem("user");
+
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      await axios.post(
+        "http://localhost:5000/api/cart/add",
+        { productId: product.id },
+        { withCredentials: true }
+      );
+
+      setAnnouncement(1);
+      setTimeout(() => setAnnouncement(0), 4000);
+      fetchQuantity();
+    } catch (err) {
+      if (err.response && err.response.status === 403) {
+        navigate("/auth");
+      } else {
+        setAnnouncement(2);
+        setTimeout(() => setAnnouncement(0), 4000);
+      }
+    }
+  };
 
   return (
     <>
@@ -249,7 +292,10 @@ export default function ProductCardDetail({ product, onClose }) {
 
           {/* Action Buttons */}
           <div className="flex gap-4 mt-4">
-            <button className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md shadow transition">
+            <button
+              onClick={handleAddToCart}
+              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md shadow transition"
+            >
               <ShoppingCart size={18} /> Add to Cart
             </button>
             <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow transition">
@@ -258,6 +304,11 @@ export default function ProductCardDetail({ product, onClose }) {
           </div>
         </div>
       </motion.div>
+
+      {announcement === 1 && <Announcement message="Product added to cart!" />}
+      {announcement === 2 && (
+        <Announcement type="error" message="Failed to add to cart!" />
+      )}
     </>
   );
 }

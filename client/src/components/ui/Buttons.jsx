@@ -23,7 +23,7 @@ export function SecondaryButton({ editStyle = "", title, ...rest }) {
         text-white
         bg-[#333]
         rounded-xl
-        hover:bg-black transition ${editStyle}
+        hover:bg-black cursor-pointer transition ${editStyle}
       `}
       {...rest}
     >
@@ -37,9 +37,9 @@ export function DangerButton({ editStyle = "", title, ...rest }) {
     <div
       className={`
       text-white
-      bg-red-600
+      bg-gray-500
       rounded-xl
-      hover:bg-red-700 transition ${editStyle}
+      hover:bg-gray-700 transition ${editStyle}
       `}
       {...rest}
     >

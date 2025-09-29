@@ -2,8 +2,11 @@
 "use client";
 import { motion } from "framer-motion";
 import { SecondaryButton } from "./ui/Buttons";
+import { useNavigate } from "react-router-dom";
 
 export default function AboutSection() {
+  const navigate = useNavigate();
+
   return (
     <section
       id="about"
@@ -38,6 +41,7 @@ export default function AboutSection() {
             <SecondaryButton
               title="Learn more"
               editStyle="px-6 py-3 text-lg rounded-xl"
+              onClick={() => navigate("/about")}
             />
           </div>
         </motion.div>

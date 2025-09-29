@@ -5,13 +5,16 @@ const {
   getUser,
   getUserPhone,
   getUserById,
+  forgotPassword,
+  resetPassword,
+  updateProfileService,
 } = require("../services/authService");
 
 const createToken = (user) => {
   return jwt.sign(
     { userId: user.id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "30d" }
   );
 };
 
@@ -32,7 +35,7 @@ exports.login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // true nếu dùng HTTPS
-      sameSite: "strict",
+      sameSite: "lax",
     });
     return res.status(201).json({
       message: "Login successful",
@@ -47,7 +50,7 @@ exports.login = async (req, res) => {
 exports.logout = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "strict",
+    sameSite: "lax",
     secure: false,
   });
   return res.status(200).json({ message: "Logged out successfully" });
@@ -102,8 +105,9 @@ exports.googleCallback = (req, res) => {
 
 exports.getUserInfo = async (req, res) => {
   try {
-    // req.user chỉ chứa userId, role từ token
-    const user = await getUserById(req.userId);
+    const { userId } = req.user;
+
+    const user = await getUserById(userId);
 
     if (!user) {
       return res
@@ -134,4 +138,43 @@ exports.getUserInfo = async (req, res) => {
 exports.facebookCallback = (req, res) => {
   const token = createToken(req.user);
   res.redirect(`http://localhost:5173/?token=${token}`);
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    await forgotPassword(email);
+    res.json({ message: "Password reset link sent to your email" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    const passwordHash = await bcrypt.hash(password, 10);
+    const result = await resetPassword(token, passwordHash);
+    res.json({ msg: result });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const updatedUser = await updateProfileService(
+      req.user.userId,
+      req.body,
+      req.file
+    );
+
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error("Update profile error:", err);
+    res.status(500).json({ success: false, message: "Failed to update user" });
+  }
 };

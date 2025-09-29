@@ -22,6 +22,7 @@ import {
 import FeatureCard from "./FeatureCard";
 import AboutSection from "./AboutSection";
 import { ElegantSpinner } from "./ui/Loading";
+import Cart from "./Cart";
 
 export default function MainContent() {
   const [showModal, setShowModal] = useState(false);
@@ -35,6 +36,8 @@ export default function MainContent() {
   const [keyword, setKeyword] = useState("");
   const [selectedbrand, setSelectedbrand] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const [options, setOptions] = useState([]);
 
@@ -190,9 +193,35 @@ export default function MainContent() {
     handleFilter();
   }, [page]);
 
+  // Fetch số lượng giỏ hàng
+  useEffect(() => {
+    fetchQuantity();
+  });
+
+  const fetchQuantity = async () => {
+    axios
+      .get("http://localhost:5000/api/cart", { withCredentials: true })
+      .then((res) => {
+        const total = res.data.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(total);
+      })
+      .catch((err) => console.error(err));
+  };
+
   return (
     <div className="min-h-screen flex flex-col overflow-y-auto  ">
-      <Navbar onSearch={setKeyword} setPage={setPage} />
+      <Navbar
+        onSearch={setKeyword}
+        setPage={setPage}
+        cartCount={cartCount}
+        onCartClick={() => setCartOpen(true)}
+      />
+
+      <Cart
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onCartUpdate={(newCount) => setCartCount(newCount)}
+      />
 
       <div className="px-5 sm:px-10 md:px-20 text-black">
         {/* Category + Brand Section */}
@@ -370,6 +399,7 @@ export default function MainContent() {
                 <ProductCardDetail
                   product={selected}
                   onClose={() => setSelected(null)}
+                  onCartUpdate={(newCount) => setCartCount(newCount)}
                 />
               )}
             </AnimatePresence>

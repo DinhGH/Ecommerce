@@ -1,11 +1,6 @@
 const express = require("express");
 const upload = require("../middlewares/upload");
 const productController = require("../controllers/productController");
-const {
-  authMiddleware,
-  requireRole,
-} = require("../middlewares/authMiddleware");
-// const { getProducts } = require("../services/productService");
 
 const router = express.Router();
 
@@ -31,15 +26,7 @@ router.put(
   productController.updateProduct
 );
 
-router.get(
-  "/",
-  productController.getProductsController,
-  authMiddleware,
-  requireRole("ADMIN"),
-  (req, res) => {
-    res.json({ message: "Xin chào admin!" });
-  }
-);
+router.get("/", productController.getProductsController);
 
 router.get("/:id", productController.getProductById);
 
