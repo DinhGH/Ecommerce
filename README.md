@@ -1,6 +1,7 @@
 Step 1: Download file and extract or Clone
 <br>
 Step 2: 
+<br>
 Move to client folder: cd client
 <br>
 Download node: npm install
@@ -8,17 +9,29 @@ Download node: npm install
   <img width="530" height="94" alt="image" src="https://github.com/user-attachments/assets/d5783d25-d11e-472c-a11b-8e7fc323d12a" />
 <br>
 Step 3: Create .env in server folder
+<br>
   <img width="271" height="465" alt="image" src="https://github.com/user-attachments/assets/0a5d2fc9-3396-4cb5-9318-654862b0266a" />
+<br>
 Config your environment variable:
+<br>
 DATABASE_URL=
+<br>
 CLOUDINARY_CLOUD_NAME=
+<br>
 CLOUDINARY_API_KEY=
+<br>
 CLOUDINARY_API_SECRET=
+<br>
 JWT_SECRET=
+<br>
 GOOGLE_CLIENT_ID=
+<br>
 GOOGLE_CLIENT_SECRET=
+<br>
 EMAIL_USER=
+<br>
 EMAIL_PASS=
+<br>
 save .env
 <br>
 Step 4:
