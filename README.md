@@ -2,7 +2,9 @@ Step 1: Download file and extract or Clone
 <br>
 Step 2: 
 Move to client folder: cd client
+<br>
 Download node: npm install
+<br>
   <img width="530" height="94" alt="image" src="https://github.com/user-attachments/assets/d5783d25-d11e-472c-a11b-8e7fc323d12a" />
 <br>
 Step 3: Create .env in server folder
@@ -20,12 +22,17 @@ EMAIL_PASS=
 save .env
 <br>
 Step 4:
+<br>
 Move to server folder: cd ../server
+<br>
 Download node: npm install  
+<br>
   <img width="493" height="87" alt="image" src="https://github.com/user-attachments/assets/186f16a3-d158-413c-9ab1-100a60447582" />
 <br>
 Step 5: Connect to database
+<br>
 npx prisma generate
+<br>
   <img width="520" height="40" alt="image" src="https://github.com/user-attachments/assets/be7611f4-babf-4e70-a927-62930fb8312d" />
 <br>
 Step 6: Run
