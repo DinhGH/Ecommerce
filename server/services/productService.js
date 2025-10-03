@@ -64,6 +64,32 @@ const createManyProducts = async (productsData) => {
     skipDuplicates: true,
   });
 };
+// Lấy product theo title (có discount)
+const getProductByTitle = async (title) => {
+  try {
+    const product = await prisma.product.findFirst({
+      where: { title: { equals: title } },
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        discountPercentage: true,
+      },
+    });
+
+    if (!product) return null;
+
+    const priceAfterDiscount =
+      product.discountPercentage && product.discountPercentage > 0
+        ? product.price - (product.price * product.discountPercentage) / 100
+        : product.price;
+
+    return { ...product, priceAfterDiscount };
+  } catch (err) {
+    console.error("❌ getProductByTitle service error:", err);
+    throw err; // ❌ chỉ throw, không dùng res.status ở service
+  }
+};
 
 module.exports = {
   createProduct,
@@ -72,4 +98,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   createManyProducts,
+  getProductByTitle,
 };

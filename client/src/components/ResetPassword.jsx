@@ -1,19 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { TbHomeMove } from "react-icons/tb";
 import Announcement from "./Announcement";
 
+import { ElegantSpinner } from "./ui/Loading";
+
 const ResetPassword = () => {
   const { token } = useParams(); // lấy token từ URL /reset-password/:token
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (msg) {
+      const timer = setTimeout(() => {
+        setMsg(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [msg]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      const value = password;
+      const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+      if (!regex.test(value)) {
+        setMsg({
+          type: "error",
+          message: "Password is invalid!",
+        });
+        return;
+      } else {
+        setMsg(null);
+      }
+      setLoading(true);
       const res = await axios.put(
         "http://localhost:5000/auth/user/reset-password",
         { token, password }
@@ -21,21 +46,23 @@ const ResetPassword = () => {
 
       setMsg({
         type: "success",
-        text: res.data.msg || "Password reset successful!",
+        message: res.data.msg || "Password reset successful!",
       });
 
       setTimeout(() => {
         navigate("/");
       }, 3000);
-    } catch (err) {
-      if (err.response) {
+    } catch (error) {
+      if (error.response && error.response.data) {
         setMsg({
           type: "error",
-          text: err.response.data.error || "Something went wrong",
+          message: error.response.data.message,
         });
       } else {
-        setMsg({ type: "error", text: "Server error: " + err.message });
+        setMsg({ type: "error", message: "Registration failed!" });
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,7 +77,20 @@ const ResetPassword = () => {
             type="password"
             className="rounded-lg text-xl my-3 border-2 border-gray-700 focus:border-gray-900 w-full px-2 py-1"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              const value = e.target.value;
+              const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+              if (!regex.test(value)) {
+                setMsg({
+                  type: "error",
+                  message:
+                    "Password must be at least 8 characters, include uppercase, lowercase, number, and special character.",
+                });
+              } else {
+                setMsg(null);
+              }
+            }}
             required
           />
 
@@ -68,7 +108,11 @@ const ResetPassword = () => {
       </Link>
 
       {/* Hiển thị thông báo */}
-      {msg && <Announcement type={msg.type} message={msg.text} />}
+      {msg && <Announcement type={msg.type} message={msg.message} />}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner message="Reseting..." />}
+      </div>
     </>
   );
 };

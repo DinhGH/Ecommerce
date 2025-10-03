@@ -6,6 +6,7 @@ const {
   updateProduct,
   deleteProduct,
   createManyProducts,
+  getProductByTitle,
 } = require("../services/productService");
 
 // parse JSON an toàn
@@ -273,5 +274,20 @@ exports.removeProduct = async (req, res) => {
     res
       .status(500)
       .json({ error: "Lỗi khi xóa sản phẩm", detail: err.message });
+  }
+};
+exports.getProductByTitle = async (req, res) => {
+  try {
+    const { title } = req.params; // controller lấy từ req
+    const product = await getProductByTitle(title);
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (err) {
+    console.error("❌ getProductByTitle controller error:", err);
+    res.status(500).json({ error: "Failed to fetch product" });
   }
 };

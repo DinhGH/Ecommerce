@@ -6,7 +6,6 @@ import Home from "./home/page.jsx";
 import Auth from "./auth/page.jsx";
 import Profile from "./profile/page.jsx";
 import Order from "./order/page.jsx";
-import ChangeAccount from "./change-account/page.jsx";
 import ForgotPassword from "./components/ForgotPassword.jsx";
 import ResetPassword from "./components/ResetPassword.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -29,7 +28,6 @@ export default function App() {
       <Route path="/auth" element={<Auth />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/orders" element={<Order />} />
-      <Route path="/change-accountt" element={<ChangeAccount />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route

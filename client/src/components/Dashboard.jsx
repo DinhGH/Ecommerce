@@ -1,3 +1,3 @@
 export default function Dashboard() {
-  return <h1>Hello dashboard</h1>;
+  return <h1>Comming soon</h1>;
 }

@@ -56,7 +56,7 @@ export default function Footer() {
             >
               <li>
                 <a
-                  href="#"
+                  href="/about"
                   className="
                     text-gray-400
                     transition-colors
@@ -80,7 +80,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/about"
                   className="
                     text-gray-400
                     transition-colors
@@ -92,7 +92,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/about"
                   className="
                     text-gray-400
                     transition-colors

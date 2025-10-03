@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 function Cart({ open, onClose, onCartUpdate }) {
   const [cart, setCart] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [isFirstOpen, setIsFirstOpen] = useState(true);
 
   // Toggle chọn sản phẩm
   const handleSelect = (id) => {
@@ -23,10 +24,19 @@ function Cart({ open, onClose, onCartUpdate }) {
       const res = await axios.get("http://localhost:5000/api/cart", {
         withCredentials: true,
       });
+      const newIds = res.data.map((item) => item.id);
       setCart(res.data);
-      setSelectedItems(res.data.map((item) => item.id));
 
-      // tính tổng số lượng và gọi callback cho MainContent
+      setSelectedItems((prev) => {
+        if (isFirstOpen) {
+          return newIds;
+        }
+
+        return prev.filter((id) => newIds.includes(id));
+      });
+
+      setIsFirstOpen(false);
+
       const total = res.data.reduce((sum, item) => sum + item.quantity, 0);
       onCartUpdate(total);
     } catch (err) {

@@ -13,5 +13,10 @@ router.post(
 );
 
 router.get("/my-orders", authMiddleware, orderController.getOrdersByUser);
+router.delete(
+  "/my-orders/:id",
+  authMiddleware,
+  orderController.cancelOrderController
+);
 
 module.exports = router;

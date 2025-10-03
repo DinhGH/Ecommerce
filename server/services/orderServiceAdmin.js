@@ -9,7 +9,12 @@ const getOrders = async (page = 1, limit = 10) => {
       skip,
       take: limit,
       include: {
-        user: true, // nếu muốn lấy thông tin user
+        user: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -42,49 +47,76 @@ const deleteOrder = async (orderId) => {
   return order;
 };
 
-const createOrder = async (data) => {
-  // lấy danh sách product từ DB
-  const productIds = data.items.map((i) => Number(i.productId));
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds } },
-    select: { id: true, price: true, discountPercentage: true },
+const createOrderService = async (userId, data, proofImage) => {
+  const {
+    recipientName,
+    recipientEmail,
+    recipientPhone,
+    altRecipientName,
+    altRecipientPhone,
+    houseNumber,
+    street,
+    ward,
+    province,
+    country,
+    deliveryTime,
+    items,
+  } = data;
+
+  // Ghép địa chỉ đầy đủ
+  const fullAddress = `${houseNumber || ""}, ${street || ""}, ${ward || ""}, ${
+    province || ""
+  }, ${country || ""}`;
+
+  // ✅ Parse items JSON an toàn
+  let parsedItems = [];
+  try {
+    parsedItems = typeof items === "string" ? JSON.parse(items) : items;
+  } catch (err) {
+    throw new Error("Invalid items format");
+  }
+
+  if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
+    throw new Error("Items must be a non-empty array");
+  }
+
+  // Tính tổng tiền
+  const total = parsedItems.reduce(
+    (sum, item) =>
+      sum + (Number(item.quantity) || 0) * (Number(item.price) || 0),
+    0
+  );
+
+  // ✅ Xoá giỏ hàng của user sau khi checkout
+  await prisma.cartItem.deleteMany({
+    where: {
+      cart: { userId: userId },
+    },
   });
 
-  // tính giá cuối cùng cho từng item
-  const itemsToCreate = data.items.map((i) => {
-    const product = products.find((p) => p.id === Number(i.productId));
-    if (!product) throw new Error(`Product not found: ${i.productId}`);
-
-    let finalPrice = product.price;
-    if (product.discountPercentage) {
-      finalPrice = finalPrice * (1 - product.discountPercentage / 100);
-    }
-
-    return {
-      productId: Number(i.productId),
-      quantity: Number(i.quantity),
-      price: finalPrice,
-    };
-  });
-
-  const total = itemsToCreate.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
+  // Tạo đơn hàng
   return await prisma.order.create({
     data: {
-      userId: Number(data.userId),
-      recipientName: data.recipientName,
-      recipientPhone: data.recipientPhone,
-      recipientEmail: data.recipientEmail || null,
-      address: data.address,
-      altRecipientName: data.altRecipientName || null,
-      altRecipientPhone: data.altRecipientPhone || null,
-      deliveryTime: data.deliveryTime || null,
-      proofImage: data.proofImage || null,
+      userId,
       total,
-      status: data.status || "PENDING",
-      items: { create: itemsToCreate },
+      recipientName,
+      recipientPhone,
+      recipientEmail,
+      address: fullAddress || "",
+      altRecipientName,
+      altRecipientPhone,
+      deliveryTime,
+      proofImage,
+      status: "PENDING",
+      items: {
+        create: parsedItems.map((item) => ({
+          productId: Number(item.productId),
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+        })),
+      },
     },
-    include: { items: { include: { product: true } } },
+    include: { items: true },
   });
 };
 
@@ -141,6 +173,6 @@ module.exports = {
   updateOrderStatus,
   getOrders,
   deleteOrder,
-  createOrder,
+  createOrderService,
   updateOrder,
 };

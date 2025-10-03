@@ -2,6 +2,7 @@ const {
   createOrderService,
   getOrdersByUserService,
   getAllOrdersService,
+  cancelOrderService,
 } = require("../services/orderService");
 const { streamUpload } = require("../middlewares/cloudinary");
 
@@ -56,5 +57,30 @@ exports.getAllOrders = async (req, res) => {
   } catch (err) {
     console.error("Get all orders error:", err);
     res.status(500).json({ message: "Failed to fetch all orders" });
+  }
+};
+
+exports.cancelOrderController = async (req, res) => {
+  const id = Number(req.params.id); // convert sang number
+
+  if (!id) {
+    return res.status(400).json({ message: "Invalid order id" });
+  }
+
+  try {
+    const cancelledOrder = await cancelOrderService(id);
+    return res.json({ success: true, order: cancelledOrder });
+  } catch (err) {
+    if (err.message === "ORDER_NOT_FOUND") {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (err.message === "EXCEEDED_24H") {
+      return res.status(400).json({
+        message:
+          "It has been over 24 hours, please contact the administrator to cancel.",
+      });
+    }
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

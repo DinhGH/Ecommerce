@@ -2,7 +2,7 @@ const {
   getOrders,
   updateOrderStatus,
   deleteOrder,
-  createOrder,
+  createOrderService,
   updateOrder,
 } = require("../services/orderServiceAdmin");
 const { streamUpload } = require("../middlewares/cloudinary");
@@ -46,32 +46,27 @@ exports.deleteOrderController = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { id } = req.params;
-    let data = req.body;
-
-    // Parse items
-    if (data.items) {
-      try {
-        data.items = JSON.parse(data.items);
-      } catch (e) {
-        data.items = [];
-      }
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Handle proofImage
+    let proofImage = null;
     if (req.file) {
-      data.proofImage = await streamUpload(req.file.buffer, "proofImage");
+      proofImage = await streamUpload(req.file.buffer, "proofImage");
     } else if (req.body.proofImage) {
-      data.proofImage = req.body.proofImage;
-    } else {
-      data.proofImage = null;
+      proofImage = req.body.proofImage;
     }
 
-    const order = await createOrder(id, data);
-    res.status(201).json(order);
+    const order = await createOrderService(userId, req.body, proofImage);
+
+    res.status(201).json({
+      message: "Order created successfully",
+      order,
+    });
   } catch (err) {
-    console.error("❌ createOrder error:", err);
-    res.status(500).json({ error: "Failed to create order" });
+    console.error("❌ Order create error:", err.message);
+    res.status(400).json({ message: err.message });
   }
 };
 

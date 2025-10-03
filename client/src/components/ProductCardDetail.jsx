@@ -294,12 +294,9 @@ export default function ProductCardDetail({ product, onClose, onCartUpdate }) {
           <div className="flex gap-4 mt-4">
             <button
               onClick={handleAddToCart}
-              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-5 py-2 rounded-md shadow transition"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow transition"
             >
               <ShoppingCart size={18} /> Add to Cart
-            </button>
-            <button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow transition">
-              <CreditCard size={18} /> Buy Now
             </button>
           </div>
         </div>

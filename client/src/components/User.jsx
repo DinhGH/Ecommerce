@@ -10,6 +10,7 @@ import {
 import { FaAngleRight, FaAngleLeft } from "react-icons/fa6";
 import Confirm from "./Comfirm";
 import Announcement from "./Announcement";
+import { ElegantSpinner } from "./ui/Loading";
 
 export default function User() {
   const [users, setUsers] = useState([]);
@@ -20,6 +21,7 @@ export default function User() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [announcement, setAnnouncement] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -41,6 +43,7 @@ export default function User() {
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(
         `http://localhost:5000/api/admin/users?page=${page}&limit=10`
       );
@@ -48,6 +51,8 @@ export default function User() {
       setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("❌ Error fetchUsers:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,6 +74,7 @@ export default function User() {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
         if (k !== "avatarUrlText") fd.append(k, v);
@@ -109,6 +115,8 @@ export default function User() {
         type: "error",
         message: "An error occur: " + err,
       });
+    } finally {
+      setLoading(false);
     }
   };
   const handleDeleteClick = (id) => {
@@ -118,13 +126,19 @@ export default function User() {
 
   const onConfirmDelete = async () => {
     try {
+      setLoading(true);
       await axios.delete(`http://localhost:5000/api/admin/users/${selectedId}`);
-      fetchUsers();
+      setAnnouncement({ message: "Delete user successfully" });
+      setTimeout(() => {
+        fetchUsers();
+      }, 3000);
     } catch (err) {
       console.error(err);
     } finally {
       setShowConfirm(false);
       setSelectedId(null);
+      setLoading(false);
+      setAnnouncement(null);
     }
   };
 
@@ -334,7 +348,7 @@ export default function User() {
               <input
                 type="password"
                 required={!editing}
-                placeholder={`${!editing ? "Your new password" : ""}`}
+                placeholder={`${editing ? "Your new password" : ""}`}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="w-full border rounded px-2 py-1"
@@ -440,6 +454,10 @@ export default function User() {
           onCancel={onCancelDelete}
         />
       )}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner />}
+      </div>
 
       {announcement && (
         <Announcement

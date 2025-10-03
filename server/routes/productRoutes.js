@@ -26,6 +26,7 @@ router.put(
   productController.updateProduct
 );
 
+router.get("/title/:title", productController.getProductByTitle);
 router.get("/", productController.getProductsController);
 
 router.get("/:id", productController.getProductById);

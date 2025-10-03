@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   HomeIcon,
   ShoppingCartIcon,
@@ -6,15 +7,17 @@ import {
   MoonIcon,
   UsersIcon,
   CubeIcon,
-  UserCircleIcon,
   Bars3Icon,
   XMarkIcon,
+  DocumentIcon,
 } from "@heroicons/react/24/outline";
 
 import Orders from "../components/Orders";
 import Product from "../components/Product";
 import User from "../components/User";
 import Dashboard from "../components/Dashboard";
+import { useNavigate } from "react-router-dom";
+import Report from "../components/Report";
 
 const NAVIGATION = [
   {
@@ -33,20 +36,10 @@ const NAVIGATION = [
     icon: <CubeIcon className="w-5 h-5" />,
   },
   { segment: "User", title: "User", icon: <UsersIcon className="w-5 h-5" /> },
-];
-
-const accounts = [
   {
-    id: 1,
-    name: "Bharat Kashyap",
-    email: "bharatkashyap@outlook.com",
-    image: "https://avatars.githubusercontent.com/u/19550456",
-  },
-  {
-    id: 2,
-    name: "Bharat MUI",
-    email: "bharat@mui.com",
-    color: "bg-yellow-600",
+    segment: "Report",
+    title: "Report",
+    icon: <DocumentIcon className="w-5 h-5" />,
   },
 ];
 
@@ -66,9 +59,47 @@ export default function Admin() {
         return <Product />;
       case "User":
         return <User />;
+      case "Report":
+        return <Report />;
       default:
         return <p>Not Found</p>;
     }
+  };
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/auth/user/me", {
+          withCredentials: true,
+        });
+        if (res.data.success) {
+          setUser(res.data.user);
+        }
+      } catch (err) {
+        console.error(err);
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:5000/auth/user/logoutUser",
+        {},
+        { withCredentials: true }
+      );
+      navigate(0);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
+    // Xóa user trên client
+    localStorage.removeItem("user");
+    setUser(null);
   };
 
   return (
@@ -117,45 +148,51 @@ export default function Admin() {
             onClick={() => setOpenAccount(!openAccount)}
             className="flex w-full p-2 rounded-lg items-center gap-3 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
-            <UserCircleIcon className="w-8 h-8 text-gray-500" />
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.fullName}
+                className="w-8 h-8 rounded-full"
+              />
+            ) : (
+              <div className="flex w-8 h-8 bg-gray-500 text-white rounded-full items-center justify-center">
+                {user?.fullName?.[0] || "U"}
+              </div>
+            )}
             <span className="text-gray-700 font-medium dark:text-gray-200">
-              Accounts
+              {user?.fullName || "Account"}
             </span>
           </button>
+
           {openAccount && (
-            <div className="w-56 p-2 bg-white rounded-lg shadow-lg absolute bottom-12 left-0 dark:bg-gray-800">
-              {accounts.map((account) => (
-                <div
-                  key={account.id}
-                  className="flex p-2 rounded-lg cursor-pointer items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  {account.image ? (
-                    <img
-                      src={account.image}
-                      alt={account.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div
-                      className={`flex w-8 h-8 text-white rounded-full items-center justify-center ${
-                        account.color || "bg-gray-500"
-                      }`}
-                    >
-                      {account.name[0]}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {account.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {account.email}
-                    </p>
+            <div className="w-full p-2 bg-white rounded-lg shadow-lg absolute bottom-12 left-0 dark:bg-gray-800">
+              <div className="flex items-center gap-3 p-2">
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.fullName}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <div className="flex w-10 h-10 bg-gray-500 text-white rounded-full items-center justify-center">
+                    {user?.fullName?.[0] || "U"}
                   </div>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    {user?.fullName || "Unknown User"}
+                  </p>
+                  <p className="text-xs break-all text-gray-500 dark:text-gray-400">
+                    {user?.email || "No Email"}
+                  </p>
                 </div>
-              ))}
-              <button className="w-full px-2 py-1 mt-2 text-left text-red-500 text-sm rounded dark:hover:bg-gray-700">
-                Sign Out
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full px-2 py-1 mt-2 text-left text-red-500 text-sm rounded dark:hover:bg-gray-700"
+              >
+                Logout
               </button>
             </div>
           )}

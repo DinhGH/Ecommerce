@@ -55,7 +55,7 @@ export default function Intro({ scrollToMain }) {
             animate="center"
             exit="exit"
             transition={{ duration: 2.7, ease: "easeInOut" }}
-            className="w-10/12 h-80 lg:w-5/6 lg:h-5/6 rounded-md object-cover"
+            className="w-10/12 h-80 lg:w-5/6 lg:h-5/6  object-cover"
             style={{
               boxShadow:
                 "6px 10px 40px rgba(158,213,234,0.5), 12px 20px 80px rgba(20,20,20,0.2)",

@@ -9,6 +9,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import { ElegantSpinner } from "./ui/Loading";
 
 export default function Order() {
   const [orders, setOrders] = useState([]);
@@ -18,6 +19,7 @@ export default function Order() {
   const [selectedId, setSelectedId] = useState(null);
   const [announcement, setAnnouncement] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Form modal
   const [showForm, setShowForm] = useState(false);
@@ -34,8 +36,8 @@ export default function Order() {
     deliveryTime: "",
     total: 0,
     status: "PENDING",
-    items: [],
-    proofImageText: "",
+    items: [{ title: "", quantity: 0, price: 0, productId: null }],
+    proofImage: "",
   });
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function Order() {
 
   const fetchOrders = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(
         `http://localhost:5000/api/admin/orders?page=${page}&limit=10`
       );
@@ -51,6 +54,8 @@ export default function Order() {
       setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("❌ Error fetchOrders:", err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,7 +72,7 @@ export default function Order() {
       total: 0,
       status: "PENDING",
       items: [],
-      proofImageText: "",
+      proofImage: "",
     });
     setProofFile(null);
     setEditing(null);
@@ -81,6 +86,7 @@ export default function Order() {
 
   const onConfirmDelete = async () => {
     try {
+      setLoading(true);
       await axios.delete(
         `http://localhost:5000/api/admin/orders/${selectedId}`
       );
@@ -94,6 +100,7 @@ export default function Order() {
       console.log(err);
     } finally {
       setShowConfirm(false);
+      setLoading(false);
       setSelectedId(null);
     }
   };
@@ -105,6 +112,7 @@ export default function Order() {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
+      setLoading(true);
       await axios.put(
         `http://localhost:5000/api/admin/orders/${orderId}/status`,
         { status: newStatus }
@@ -114,17 +122,24 @@ export default function Order() {
     } catch (err) {
       console.log(err);
       setAnnouncement({ type: "error", message: "Failed to update status." });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
-        if (k !== "items") fd.append(k, v);
+        if (k !== "items" && k !== "proofImage") fd.append(k, v);
       });
-      if (proofFile) fd.append("proofImage", proofFile);
+      if (proofFile) {
+        fd.append("proofImage", proofFile);
+      } else if (form.proofImage) {
+        fd.append("proofImage", form.proofImage);
+      }
       if (form.items.length) fd.append("items", JSON.stringify(form.items));
 
       const url = editing
@@ -146,6 +161,8 @@ export default function Order() {
     } catch (err) {
       setAnnouncement({ type: "error", message: "Failed to save order." });
       console.log(err);
+    } finally {
+      setLoading(true);
     }
   };
 
@@ -272,8 +289,13 @@ export default function Order() {
                               deliveryTime: o.deliveryTime || "",
                               total: o.total,
                               status: o.status,
-                              items: o.items || [],
-                              proofImageText: o.proofImage || null,
+                              items: (o.items || []).map((i) => ({
+                                productId: i.productId,
+                                quantity: i.quantity,
+                                price: i.price,
+                                title: i.product?.title || "",
+                              })),
+                              proofImage: o.proofImage || "",
                             });
                           }}
                         >
@@ -401,14 +423,6 @@ export default function Order() {
                   setForm({ ...form, deliveryTime: e.target.value })
                 }
               />
-              {/* <input
-                className="w-full border rounded px-2 py-1"
-                type="number"
-                placeholder="Total"
-                required
-                value={form.total}
-                onChange={(e) => setForm({ ...form, total: e.target.value })}
-              /> */}
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -431,12 +445,10 @@ export default function Order() {
                 accept="image/*"
                 onChange={(e) => setProofFile(e.target.files[0] || null)}
               />
-              {(proofFile || (editing && form.proofImageText)) && (
+              {(proofFile || form.proofImage) && (
                 <img
                   src={
-                    proofFile
-                      ? URL.createObjectURL(proofFile)
-                      : form.proofImageText
+                    proofFile ? URL.createObjectURL(proofFile) : form.proofImage
                   }
                   alt="preview"
                   className="w-24 h-24 mt-2 object-cover"
@@ -450,14 +462,30 @@ export default function Order() {
               {form.items.map((item, index) => (
                 <div key={index} className="flex gap-2 items-center mb-2">
                   <input
-                    type="number"
-                    placeholder="Product ID"
-                    value={item.productId}
-                    onChange={(e) => {
+                    type="text"
+                    placeholder="Product Title"
+                    value={item.title}
+                    onChange={async (e) => {
+                      const newTitle = e.target.value;
                       const newItems = [...form.items];
-                      newItems[index].productId = e.target.value;
+                      newItems[index].title = newTitle;
+
+                      try {
+                        if (newTitle.trim() !== "") {
+                          const res = await axios.get(
+                            `http://localhost:5000/api/admin/products/title/${newTitle}`
+                          );
+                          newItems[index].price = res.data.priceAfterDiscount;
+                          newItems[index].productId = res.data.id;
+                        }
+                      } catch (err) {
+                        console.error("❌ fetch product error:", err);
+                        newItems[index].price = 0;
+                      }
+
                       setForm({ ...form, items: newItems });
                     }}
+                    className="border rounded px-2 py-1"
                   />
                   <input
                     type="number"
@@ -465,24 +493,18 @@ export default function Order() {
                     value={item.quantity}
                     onChange={(e) => {
                       const newItems = [...form.items];
-                      newItems[index].quantity = e.target.value;
+                      newItems[index].quantity = parseInt(e.target.value) || 0;
                       setForm({ ...form, items: newItems });
                     }}
+                    className="border rounded px-2 py-1 w-24"
                   />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={item.price}
-                    onChange={(e) => {
-                      const newItems = [...form.items];
-                      newItems[index].price = e.target.value;
-                      setForm({ ...form, items: newItems });
-                    }}
-                  />
+                  <span className="text-white">
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </span>
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    className="text-white bg-[#d22525] hover:bg-[#a41010]  px-2 py-1 rounded-lg ml-3"
+                    className="text-white bg-[#d22525] hover:bg-[#a41010] px-2 py-1 rounded-lg ml-3"
                   >
                     Remove
                   </button>
@@ -501,7 +523,7 @@ export default function Order() {
             <div>
               <label>Total</label>
               <input
-                className="w-full border rounded px-2 py-1 bg-gray-200 cursor-not-allowed"
+                className="w-full border rounded px-2 py-1  cursor-not-allowed"
                 type="number"
                 value={form.total}
                 disabled
@@ -550,6 +572,10 @@ export default function Order() {
           onCancel={onCancelDelete}
         />
       )}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner />}
+      </div>
 
       {/* Announcement */}
       {announcement && (

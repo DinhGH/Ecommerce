@@ -23,12 +23,12 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const user = await getUser(email);
     if (!user) {
-      return res.status(404).json({ message: "Email is incorrect" });
+      return res.status(400).json({ message: "Email is incorrect" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(404).json({ message: "Password is incorrect" });
+      return res.status(400).json({ message: "Password is incorrect" });
     }
     const { password: _, ...userData } = user;
     const token = createToken(user);
@@ -143,13 +143,14 @@ exports.facebookCallback = (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    const isEmail = await getUser(email);
+    if (!isEmail) {
+      return res.status(400).json({ message: "Email not found!" });
     }
     await forgotPassword(email);
     res.json({ message: "Password reset link sent to your email" });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message });
   }
 };
 
@@ -160,7 +161,7 @@ exports.resetPassword = async (req, res) => {
     const result = await resetPassword(token, passwordHash);
     res.json({ msg: result });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message });
   }
 };
 

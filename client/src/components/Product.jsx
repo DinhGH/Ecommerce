@@ -9,6 +9,8 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { FaAngleRight, FaAngleLeft } from "react-icons/fa6";
+import { ElegantSpinner } from "./ui/Loading";
+import Announcement from "./Announcement";
 
 export default function Product() {
   const [products, setProducts] = useState([]);
@@ -17,6 +19,8 @@ export default function Product() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [announcement, setAnnouncement] = useState(null);
 
   // form state
   const [simple, setSimple] = useState({
@@ -51,15 +55,22 @@ export default function Product() {
   const [qrCodeFile, setQrCodeFile] = useState(null);
 
   useEffect(() => {
+    setLoading(true);
     fetchProducts();
   }, [page]);
 
   const fetchProducts = async () => {
-    const res = await axios.get(
-      `http://localhost:5000/api/admin/products?page=${page}&limit=10`
-    );
-    setProducts(res.data.data);
-    setTotalPages(res.data.totalPages);
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/admin/products?page=${page}&limit=10`
+      );
+      setProducts(res.data.data);
+      setTotalPages(res.data.totalPages);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -96,6 +107,7 @@ export default function Product() {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
+      setLoading(true);
       const fd = new FormData();
 
       // Thêm tất cả các trường text
@@ -159,16 +171,22 @@ export default function Product() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("✅ Thành công!");
+      setAnnouncement({ message: "Add product successfully!" });
       fetchProducts();
       setShowForm(false);
       setEditing(null);
       resetForm();
-    } catch (err) {
-      console.error("Lỗi chi tiết:", err.response?.data || err.message);
-      alert(
-        "❌ Lỗi khi lưu sản phẩm: " + (err.response?.data?.error || err.message)
-      );
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setAnnouncement({
+          type: "error",
+          message: error.response.data.message,
+        });
+      } else {
+        setAnnouncement({ type: "error", message: "Add product failed!" });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1475,6 +1493,19 @@ export default function Product() {
             </div>
           </form>
         </div>
+      )}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner />}
+      </div>
+
+      {/* Announcement */}
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
       )}
     </div>
   );

@@ -96,9 +96,9 @@ const MorphingShape = () => {
 };
 
 // Component 6: Elegant Spinner
-const ElegantSpinner = () => {
+const ElegantSpinner = ({ message = "" }) => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
+    <div className="fixed inset-0 flex items-center flex-col justify-center z-50 bg-black/60">
       <div className="relative w-20 h-20">
         <div className="absolute inset-2 border border-gray-300 rounded-full"></div>
         <div className="absolute inset-0 border-2 border-transparent border-t-black rounded-full animate-spin"></div>
@@ -107,6 +107,7 @@ const ElegantSpinner = () => {
           style={{ animationDirection: "reverse", animationDuration: "1.5s" }}
         ></div>
       </div>
+      <p className="text-lg font-semibold text-gray-100">{message}</p>
     </div>
   );
 };

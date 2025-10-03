@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Announcement from "../components/Announcement";
+import { ElegantSpinner } from "../components/ui/Loading";
 
 const features = [
   {
@@ -62,11 +64,131 @@ export default function About() {
   const [issueType, setIssueType] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [announcement, setAnnouncement] = useState(null);
+  const [contactData, setContactData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+
+  const handleContactChange = (e) => {
+    setContactData({ ...contactData, [e.target.name]: e.target.value });
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      if (
+        !contactData.name ||
+        !contactData.email ||
+        !contactData.phone ||
+        !contactData.subject ||
+        !contactData.message
+      ) {
+        setAnnouncement({
+          type: "error",
+          message: "Please type all field!",
+        });
+        return;
+      }
+
+      if (contactData.phone.length !== 10) {
+        setAnnouncement({
+          type: "error",
+          message: "Phone number is invalid!",
+        });
+        return;
+      }
+
+      if (contactData.name.length >= 50) {
+        setAnnouncement({
+          type: "error",
+          message: "Your name cannot exceed 50 characters.",
+        });
+        return;
+      }
+
+      if (contactData.subject.length >= 50) {
+        setAnnouncement({
+          type: "error",
+          message: "Subject cannot exceed 50 characters.",
+        });
+        return;
+      }
+
+      if (contactData.message.length >= 700) {
+        setAnnouncement({
+          type: "error",
+          message: "Message cannot exceed 700 characters.",
+        });
+        return;
+      }
+
+      const res = await axios.post(
+        "http://localhost:5000/api/contact",
+        contactData
+      );
+      if (res.data.success) {
+        setAnnouncement({
+          type: "success",
+          message: "Message sent successfully!",
+        });
+        setContactData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setAnnouncement({ type: "error", message: "Failed to send message." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      setLoading(true);
+      if (!orderId || !issueType || !productName || !description) {
+        setAnnouncement({
+          type: "error",
+          message: "Please type all field!",
+        });
+        return;
+      }
+
+      if (orderId.length >= 7) {
+        setAnnouncement({
+          type: "error",
+          message: "OrderId cannot exceed 1000000.",
+        });
+        return;
+      }
+      if (productName.length >= 50) {
+        setAnnouncement({
+          type: "error",
+          message: "Product name cannot exceed 50 characters.",
+        });
+        return;
+      }
+
+      if (description.length >= 1000) {
+        setAnnouncement({
+          type: "error",
+          message: "Desciption cannot exceed 1000 characters.",
+        });
+        return;
+      }
+
       const formData = new FormData();
       formData.append("orderId", orderId);
       formData.append("productName", productName);
@@ -83,7 +205,7 @@ export default function About() {
       );
 
       if (res.status === 201) {
-        alert("Report submitted successfully!");
+        setAnnouncement({ message: "Report submitted successfully!" });
         // reset form
         setOrderId("");
         setProductName("");
@@ -93,7 +215,12 @@ export default function About() {
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to submit report. Please try again.");
+      setAnnouncement({
+        type: "error",
+        message: "Failed to submit report. Please try again.",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,31 +262,97 @@ export default function About() {
             <h2 className="text-2xl font-semibold mb-6 text-gray-100">
               Contact Support
             </h2>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleContactSubmit}>
               <input
+                name="name"
+                value={contactData.name}
+                onChange={(e) => {
+                  handleContactChange(e);
+                  const value = e.target.value;
+
+                  if (value.length >= 50) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Your name cannot exceed 50 characters.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Your Name"
               />
               <input
+                name="email"
                 type="email"
+                value={contactData.email}
+                onChange={handleContactChange}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Your Email"
               />
               <input
+                name="phone"
                 type="tel"
+                value={contactData.phone}
+                onChange={(e) => {
+                  handleContactChange(e);
+                  const value = e.target.value;
+
+                  if (value.length !== 10) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Phone number must be exactly 10 digits.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Phone"
               />
               <input
+                name="subject"
+                value={contactData.subject}
+                onChange={(e) => {
+                  handleContactChange(e);
+                  const value = e.target.value;
+
+                  if (value.length >= 50) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Subject cannot exceed 50 characters.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Subject"
               />
               <textarea
+                name="message"
+                value={contactData.message}
+                onChange={(e) => {
+                  handleContactChange(e);
+                  const value = e.target.value;
+
+                  if (value.length >= 700) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Message cannot exceed 700 characters.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 rows="4"
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Message"
               ></textarea>
-              <button className="w-full bg-[#333] hover:bg-[#242424] text-white py-3 rounded-lg transition">
+              <button
+                type="submit"
+                className="w-full bg-[#333] hover:bg-[#242424] text-white py-3 rounded-lg transition"
+              >
                 Send Message
               </button>
             </form>
@@ -172,24 +365,46 @@ export default function About() {
             </h2>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <input
+                type="number"
                 value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
+                onChange={(e) => {
+                  setOrderId(e.target.value);
+                  const value = e.target.value;
+
+                  if (value.length >= 7) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "OrderId cannot exceed 1000000.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Order ID"
-                required
               />
               <input
                 value={productName}
-                onChange={(e) => setProductName(e.target.value)}
+                onChange={(e) => {
+                  setProductName(e.target.value);
+                  const value = e.target.value;
+
+                  if (value.length >= 50) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Product name cannot exceed 50 characters.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Product Name"
-                required
               />
               <select
                 value={issueType}
                 onChange={(e) => setIssueType(e.target.value)}
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
-                required
               >
                 <option value="">Select Issue</option>
                 <option value="damaged">Damaged Product</option>
@@ -199,7 +414,19 @@ export default function About() {
               </select>
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  const value = e.target.value;
+
+                  if (value.length >= 1000) {
+                    setAnnouncement({
+                      type: "error",
+                      message: "Description cannot exceed 1000 characters.",
+                    });
+                  } else {
+                    setAnnouncement(null);
+                  }
+                }}
                 rows="4"
                 className="w-full border border-gray-600 bg-gray-100 p-3 rounded-lg text-gray-900"
                 placeholder="Describe the issue..."
@@ -234,6 +461,18 @@ export default function About() {
           Shop Now
         </button>
       </section>
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner message="Sending..." />}
+      </div>
+
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
     </div>
   );
 }

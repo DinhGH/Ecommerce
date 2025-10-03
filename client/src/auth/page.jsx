@@ -17,8 +17,10 @@ import { TbHomeMove } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import { ElegantSpinner } from "../components/ui/Loading";
 import { useNavigate } from "react-router-dom";
+import Announcement from "../components/Announcement";
 
 axios.defaults.withCredentials = true;
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
 
@@ -98,6 +100,7 @@ const LoginForm = () => {
     rememberMe: false,
   });
   const [loading, setLoading] = useState(false);
+  const [announcement, setAnnouncement] = useState(null);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -118,17 +121,26 @@ const LoginForm = () => {
       );
       if (res.status == 201) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
-
-        if (res.data.role === "ADMIN") {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
+        setAnnouncement({ message: "Login successfully!" });
+        setTimeout(() => {
+          if (res.data.role === "ADMIN") {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 3000);
       } else {
         alert("Login failed!");
       }
     } catch (error) {
-      console.error("Error Loging:", error);
+      if (error.response && error.response.data) {
+        setAnnouncement({
+          type: "error",
+          message: error.response.data.message,
+        });
+      } else {
+        setAnnouncement({ type: "error", message: "Registration failed!" });
+      }
     } finally {
       setLoading(false);
     }
@@ -155,6 +167,7 @@ const LoginForm = () => {
             <input
               type="email"
               name="email"
+              required
               value={formData.email}
               onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
@@ -171,6 +184,7 @@ const LoginForm = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
+                required
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
@@ -254,8 +268,16 @@ const LoginForm = () => {
         </div>
       </div>
       <div className="relative top-0 left-0">
-        {loading && <ElegantSpinner />}
+        {loading && <ElegantSpinner message="Login..." />}
       </div>
+
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
     </>
   );
 };
@@ -264,6 +286,7 @@ const LoginForm = () => {
 const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [announcement, setAnnouncement] = useState(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -287,12 +310,79 @@ const RegisterForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+    if (
+      !formData.fullName ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.address ||
+      !formData.gender ||
+      !formData.age ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      setAnnouncement({
+        type: "error",
+        message: "Please fill in all required fields!",
+      });
       return;
     }
+
+    if (!formData.email.includes("@")) {
+      setAnnouncement({
+        type: "error",
+        message: "Email is invalid!",
+      });
+      return;
+    }
+
+    if (formData.fullName.length >= 50) {
+      setAnnouncement({
+        type: "error",
+        message: "Full name cannot exceed 50 characters",
+      });
+      return;
+    }
+    if (formData.phone.length !== 10) {
+      setAnnouncement({
+        type: "error",
+        message: "Phone number is invalid!",
+      });
+      return;
+    }
+
+    if (formData.age < 0 || formData.age > 150) {
+      setAnnouncement({
+        type: "error",
+        message: "Age is invalid!",
+      });
+      return;
+    } else {
+      setAnnouncement(null);
+    }
+
+    const value = formData.password;
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!regex.test(value)) {
+      setAnnouncement({
+        type: "error",
+        message: "Password is invalid!",
+      });
+      return;
+    } else {
+      setAnnouncement(null);
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setAnnouncement({ type: "error", message: "Passwords do not match!" });
+      return;
+    }
+
     if (!formData.agreeTerms) {
-      alert("You must agree to the terms!");
+      setAnnouncement({
+        type: "error",
+        message: "You must agree to the terms!",
+      });
+
       return;
     }
     try {
@@ -313,12 +403,20 @@ const RegisterForm = () => {
           gender: "",
           agreeTerms: false,
         });
-        navigate(0);
-      } else {
-        alert("Registration failed!");
+        setAnnouncement({ message: "Register successfully" });
+        setTimeout(() => {
+          navigate(0);
+        }, 3000);
       }
     } catch (error) {
-      console.error("Error creating user:", error);
+      if (error.response && error.response.data) {
+        setAnnouncement({
+          type: "error",
+          message: error.response.data.message,
+        });
+      } else {
+        setAnnouncement({ type: "error", message: "Registration failed!" });
+      }
     } finally {
       setLoading(false);
     }
@@ -346,9 +444,22 @@ const RegisterForm = () => {
             required
             name="fullName"
             value={formData.fullName}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              const value = e.target.value;
+
+              if (value.length >= 50) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Full name cannot exceed 50 characters.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
             placeholder="Enter your full name"
+            maxLength={50}
           />
         </div>
 
@@ -363,7 +474,19 @@ const RegisterForm = () => {
             required
             name="email"
             value={formData.email}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              const value = e.target.value;
+
+              if (!value.includes("@")) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Email must contain '@'.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
             placeholder="Enter your email address"
           />
@@ -380,7 +503,19 @@ const RegisterForm = () => {
             required
             name="phone"
             value={formData.phone}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              const value = e.target.value;
+
+              if (value.length !== 10) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Phone number must be exactly 10 digits.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
             placeholder="Enter your phone number"
           />
@@ -395,9 +530,22 @@ const RegisterForm = () => {
           <input
             type="text"
             required
+            maxLength={100}
             name="address"
             value={formData.address}
-            onChange={handleInputChange}
+            onChange={(e) => {
+              handleInputChange(e);
+              const value = e.target.value;
+
+              if (value.length >= 100) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Address cannot exceed 50 characters.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
             placeholder="Enter your address"
           />
@@ -418,13 +566,17 @@ const RegisterForm = () => {
               onChange={handleInputChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
               placeholder="Age"
-              min="12"
-              max="120"
+              min="0"
+              max="150"
               onInput={(e) => {
                 const value = Number(e.target.value);
-                if (value < 0 || value > 100) {
-                  alert("Age must be between 0 and 100");
-                  e.target.value = "";
+                if (value < 0 || value > 150) {
+                  setAnnouncement({
+                    type: "error",
+                    message: "Age must be between 0 and 150",
+                  });
+                } else {
+                  setAnnouncement(null);
                 }
               }}
             />
@@ -460,9 +612,24 @@ const RegisterForm = () => {
               type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
-              onChange={handleInputChange}
+              onChange={(e) => {
+                handleInputChange(e);
+                const value = e.target.value;
+                const regex =
+                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+                if (!regex.test(value)) {
+                  setAnnouncement({
+                    type: "error",
+                    message:
+                      "Password must be at least 8 characters, include uppercase, lowercase, number, and special character.",
+                  });
+                } else {
+                  setAnnouncement(null);
+                }
+              }}
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
               placeholder="Create a strong password"
+              required
             />
             <button
               type="button"
@@ -484,9 +651,24 @@ const RegisterForm = () => {
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
               value={formData.confirmPassword}
-              onChange={handleInputChange}
+              required
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all"
               placeholder="Re-enter password"
+              onChange={(e) => {
+                handleInputChange(e);
+                const value = e.target.value;
+                const regex =
+                  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+                if (!regex.test(value)) {
+                  setAnnouncement({
+                    type: "error",
+                    message:
+                      "Password must be at least 8 characters, include uppercase, lowercase, number, and special character.",
+                  });
+                } else {
+                  setAnnouncement(null);
+                }
+              }}
             />
             <button
               type="button"
@@ -574,8 +756,15 @@ const RegisterForm = () => {
       </div>
 
       <div className="relative top-0 left-0">
-        {loading && <ElegantSpinner />}
+        {loading && <ElegantSpinner message="Register..." />}
       </div>
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
     </div>
   );
 };

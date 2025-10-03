@@ -67,10 +67,10 @@ const forgotPassword = async (email) => {
   const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
 
   await transporter.sendMail({
-    from: '"Support" <your-email@gmail.com>',
+    from: '"Support" <huynhtandinh.dev@gmail.com>',
     to: email,
     subject: "Password Reset",
-    text: `Click here to reset password: ${resetUrl}`,
+    text: `Click here to reset password: ${resetUrl}. Expire in 15 minutes.`,
   });
 };
 
@@ -122,6 +122,21 @@ const updateProfileService = async (userId, data, file) => {
   return updatedUser;
 };
 
+const updateRefreshToken = (userId, refreshToken) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { refreshToken },
+  });
+};
+
+// Xoá refreshToken khi logout
+const clearRefreshToken = (userId) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { refreshToken: null },
+  });
+};
+
 module.exports = {
   createUser,
   getUser,
@@ -130,4 +145,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   updateProfileService,
+  updateRefreshToken,
+  clearRefreshToken,
 };

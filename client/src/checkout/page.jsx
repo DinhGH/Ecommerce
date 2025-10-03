@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
+import Announcement from "../components/Announcement";
+import { ElegantSpinner } from "../components/ui/Loading";
 
 export default function Checkout() {
   const { state } = useLocation();
@@ -19,6 +21,8 @@ export default function Checkout() {
   const [country, setCountry] = useState("");
   const [deliveryTime, setDeliveryTime] = useState("");
   const [paymentProof, setPaymentProof] = useState(null);
+  const [announcement, setAnnouncement] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const total = items.reduce(
     (sum, item) => sum + item.quantity * item.product.price,
@@ -30,7 +34,87 @@ export default function Checkout() {
   };
 
   const handleCheckout = async () => {
+    if (
+      !recipientName ||
+      !email ||
+      !phone ||
+      !altRecipientName ||
+      !altPhone ||
+      !houseNumber ||
+      !street ||
+      !ward ||
+      !province ||
+      !country ||
+      !deliveryTime
+    ) {
+      setAnnouncement({
+        type: "error",
+        message: "Please fill in all required fields!",
+      });
+      return;
+    }
+
+    if (recipientName.length >= 50) {
+      setAnnouncement({
+        type: "error",
+        message: "Recipient name cannot exceed 50 characters.",
+      });
+      return;
+    }
+    if (altRecipientName.length >= 50) {
+      setAnnouncement({
+        type: "error",
+        message: "AltRecipient name cannot exceed 50 characters.",
+      });
+      return;
+    }
+
+    if (phone.length !== 10) {
+      setAnnouncement({
+        type: "error",
+        message: "Phone number is invalid!",
+      });
+      return;
+    }
+    if (altPhone.length !== 10) {
+      setAnnouncement({
+        type: "error",
+        message: "AltPhone number is invalid!",
+      });
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setAnnouncement({
+        type: "error",
+        message: "Email is invalid!",
+      });
+      return;
+    }
+
+    const selectedDate = new Date(deliveryTime);
+    const now = new Date();
+
+    const minDateTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+    if (selectedDate < minDateTime) {
+      setAnnouncement({
+        type: "error",
+        message: "Delivery date must be at least 48 hours from now!",
+      });
+      return;
+    }
+
+    if (!paymentProof) {
+      setAnnouncement({
+        type: "error",
+        message: "Please provide the evidence of payment!",
+      });
+      return;
+    }
+
     try {
+      setLoading(true);
       const formData = new FormData();
       formData.append("recipientName", recipientName);
       formData.append("email", email);
@@ -62,12 +146,16 @@ export default function Checkout() {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
+      setAnnouncement({ message: "Order placed successfully!" });
 
-      alert("Order placed successfully!");
-      navigate("/orders");
+      setTimeout(() => {
+        navigate("/orders");
+      }, 3000);
     } catch (err) {
       console.error(err);
-      alert("Checkout failed!");
+      setAnnouncement({ type: "error", message: "Checkout failed!" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +176,19 @@ export default function Checkout() {
             type="text"
             className="w-full border px-3 py-2 rounded"
             value={recipientName}
-            onChange={(e) => setRecipientName(e.target.value)}
+            onChange={(e) => {
+              setRecipientName(e.target.value);
+              const value = e.target.value;
+
+              if (value.length >= 50) {
+                setAnnouncement({
+                  type: "error",
+                  message: "AltRecipient name cannot exceed 50 characters.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
           />
         </div>
 
@@ -108,7 +208,19 @@ export default function Checkout() {
             type="text"
             className="w-full border px-3 py-2 rounded"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              const value = e.target.value;
+
+              if (value.length !== 10) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Phone number must be exactly 10 digits.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
           />
         </div>
 
@@ -118,7 +230,19 @@ export default function Checkout() {
             type="text"
             className="w-full border px-3 py-2 rounded"
             value={altRecipientName}
-            onChange={(e) => setAltRecipientName(e.target.value)}
+            onChange={(e) => {
+              setAltRecipientName(e.target.value);
+              const value = e.target.value;
+
+              if (value.length >= 50) {
+                setAnnouncement({
+                  type: "error",
+                  message: "AltRecipient name cannot exceed 50 characters.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
           />
         </div>
 
@@ -128,7 +252,19 @@ export default function Checkout() {
             type="text"
             className="w-full border px-3 py-2 rounded"
             value={altPhone}
-            onChange={(e) => setAltPhone(e.target.value)}
+            onChange={(e) => {
+              setAltPhone(e.target.value);
+              const value = e.target.value;
+
+              if (value.length !== 10) {
+                setAnnouncement({
+                  type: "error",
+                  message: "Phone number must be exactly 10 digits.",
+                });
+              } else {
+                setAnnouncement(null);
+              }
+            }}
           />
         </div>
       </div>
@@ -225,6 +361,17 @@ export default function Checkout() {
       >
         Confirm Payment
       </button>
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner message="Checking..." />}
+      </div>
     </div>
   );
 }

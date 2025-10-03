@@ -181,7 +181,6 @@ export default function Navbar({ onSearch, setPage, cartCount, onCartClick }) {
                 <Link
                   className="w-full block text-center"
                   to="/profile"
-                  target="_blank"
                   rel="noopener noreferrer"
                 >
                   <button className="px-3 py-2 hover:bg-[#101010c9] hover:text-white transition w-full">
@@ -192,22 +191,10 @@ export default function Navbar({ onSearch, setPage, cartCount, onCartClick }) {
                 <Link
                   className="w-full block text-center"
                   to="/orders"
-                  target="_blank"
                   rel="noopener noreferrer"
                 >
                   <button className="px-3 py-2 hover:bg-[#101010c9] hover:text-white transition w-full">
                     My Order
-                  </button>
-                </Link>
-
-                <Link
-                  className="w-full block text-center"
-                  to="/change-account"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <button className="px-3 py-2 hover:bg-[#101010c9] hover:text-white transition w-full">
-                    Change Account
                   </button>
                 </Link>
 

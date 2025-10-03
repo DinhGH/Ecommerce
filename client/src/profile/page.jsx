@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { ElegantSpinner } from "../components/ui/Loading";
+import Announcement from "../components/Announcement";
 
 export default function Profile() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [announcement, setAnnouncement] = useState(null);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -21,12 +23,13 @@ export default function Profile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
+        setLoading(true);
         const res = await axios.get("http://localhost:5000/auth/user/me", {
           withCredentials: true,
         });
 
         if (res.data.success) {
-          setUser(res.data.user);
+          // setUser(res.data.user);
           setFormData({
             fullName: res.data.user.fullName || "",
             email: res.data.user.email || "",
@@ -53,6 +56,45 @@ export default function Profile() {
 
   const handleUpdate = async () => {
     try {
+      setLoading(true);
+      if (!formData.address) {
+        setAnnouncement({
+          type: "error",
+          message: "Please type your address!",
+        });
+        return;
+      }
+      if (!formData.email) {
+        setAnnouncement({
+          type: "error",
+          message: "Please type your email!",
+        });
+        return;
+      }
+      if (!formData.phone) {
+        setAnnouncement({
+          type: "error",
+          message: "Please type your phone number!",
+        });
+        return;
+      }
+      if (formData.phone.length !== 10) {
+        setAnnouncement({
+          type: "error",
+          message: "Phone number is invalid!",
+        });
+        return;
+      }
+      if (formData.age < 0 || formData.age > 150) {
+        setAnnouncement({
+          type: "error",
+          message: "Age is invalid!",
+        });
+        return;
+      } else {
+        setAnnouncement(null);
+      }
+
       const data = new FormData();
       Object.keys(formData).forEach((key) => {
         data.append(key, formData[key]);
@@ -71,8 +113,8 @@ export default function Profile() {
       );
 
       if (res.data.success) {
-        alert("Profile updated successfully!");
-        setUser(res.data.user);
+        setAnnouncement({ message: "Profile updated successfully!" });
+        // setUser(res.data.user);
         setFormData({
           ...formData,
           avatar: res.data.user.avatar ? res.data.user.avatar : "",
@@ -80,16 +122,15 @@ export default function Profile() {
         setEditMode(false);
         setAvatarFile(null);
       } else {
-        alert("Update failed!");
+        setAnnouncement({ type: "error", message: "Update failed!" });
       }
     } catch (err) {
       console.error("Update error:", err);
-      alert("Error updating profile");
+      setAnnouncement({ type: "error", message: "Error updating profile" });
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (loading) return <ElegantSpinner />;
-  if (!user) return <p>User not found</p>;
 
   return (
     <div className="max-w-2xl mx-auto p-6 m-5 bg-white shadow-xl rounded">
@@ -125,7 +166,19 @@ export default function Profile() {
           type="text"
           name="fullName"
           value={formData.fullName}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            const value = e.target.value;
+
+            if (value.length >= 50) {
+              setAnnouncement({
+                type: "error",
+                message: "Phone number must be exactly 10 digits.",
+              });
+            } else {
+              setAnnouncement(null);
+            }
+          }}
           disabled={!editMode}
           placeholder="Full Name"
           className="border px-3 py-2 rounded"
@@ -134,7 +187,20 @@ export default function Profile() {
           type="email"
           name="email"
           value={formData.email}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            const value = e.target.value;
+
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!regex.test(value)) {
+              setAnnouncement({
+                type: "error",
+                message: "Please enter a valid email address.",
+              });
+            } else {
+              setAnnouncement(null);
+            }
+          }}
           disabled={!editMode}
           placeholder="Email"
           className="border px-3 py-2 rounded"
@@ -143,7 +209,19 @@ export default function Profile() {
           type="text"
           name="phone"
           value={formData.phone}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            const value = e.target.value;
+
+            if (!/^\d{10}$/.test(value)) {
+              setAnnouncement({
+                type: "error",
+                message: "Phone number must be exactly 10 digits.",
+              });
+            } else {
+              setAnnouncement(null);
+            }
+          }}
           disabled={!editMode}
           placeholder="Phone"
           className="border px-3 py-2 rounded"
@@ -161,7 +239,18 @@ export default function Profile() {
           type="number"
           name="age"
           value={formData.age}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            const value = Number(e.target.value);
+            if (value < 0 || value > 150) {
+              setAnnouncement({
+                type: "error",
+                message: "Age must be between 0 and 150",
+              });
+            } else {
+              setAnnouncement(null);
+            }
+          }}
           disabled={!editMode}
           placeholder="Age"
           className="border px-3 py-2 rounded"
@@ -209,6 +298,17 @@ export default function Profile() {
           </button>
         )}
       </div>
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner message="Updating..." />}
+      </div>
+      {announcement && (
+        <Announcement
+          type={announcement.type}
+          message={announcement.message}
+          onClose={() => setAnnouncement(null)}
+        />
+      )}
     </div>
   );
 }

@@ -81,6 +81,7 @@ export default function MainContent() {
 
   const filterByBrand = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(
         `http://localhost:5000/api/products/filter-brand?brand=${selectedbrand}&page=${page}&limit=12`
       );
@@ -88,6 +89,8 @@ export default function MainContent() {
       setTotalPages(res.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching brands:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -138,6 +141,7 @@ export default function MainContent() {
 
   const filterByCategory = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(
         `http://localhost:5000/api/products/filter-category?category=${selectedopt}&page=${page}&limit=12`
       );
@@ -145,6 +149,8 @@ export default function MainContent() {
       setTotalPages(res.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching category:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -162,6 +168,7 @@ export default function MainContent() {
 
   const handleFilter = async () => {
     try {
+      setLoading(true);
       let url = `http://localhost:5000/api/products/filter?page=${page}&limit=12`;
 
       if (selectedopt && selectedopt !== "All") {
@@ -186,6 +193,8 @@ export default function MainContent() {
       setShowModal(false);
     } catch (error) {
       console.error("Error fetching filter:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

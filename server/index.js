@@ -15,6 +15,7 @@ const userRoutes = require("./routes/userRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 const orderRoutesAdmin = require("./routes/orderRoutesAdmin");
 const { authMiddleware, requireRole } = require("./middlewares/authMiddleware");
 
@@ -45,6 +46,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.use("/api/report", reportRoutes);
+app.use("/api/contact", contactRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server chạy http://localhost:${PORT}`));

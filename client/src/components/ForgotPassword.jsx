@@ -4,26 +4,41 @@ import { SecondaryButton } from "./ui/Buttons";
 import { TbHomeMove } from "react-icons/tb";
 import { Link } from "react-router-dom";
 import Announcement from "./Announcement";
+import { ElegantSpinner } from "./ui/Loading";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [announcement, setAnnouncement] = useState(null); // lưu thông báo
+  const [announcement, setAnnouncement] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     try {
+      if (!email) {
+        setAnnouncement({ type: "error", message: "Please type your email!" });
+        return;
+      }
+      if (!email.includes("@")) {
+        setAnnouncement({ type: "error", message: "Email is invalid!" });
+        return;
+      }
+      setLoading(true);
       await axios.post("http://localhost:5000/auth/user/forgot-password", {
         email,
       });
       setAnnouncement({
-        type: "success",
         message: "Check your email for reset link!",
       });
-    } catch (err) {
-      setAnnouncement({
-        type: "error",
-        message:
-          err.response?.data?.error || "Error sending reset link. Try again!",
-      });
+    } catch (error) {
+      if (error.response && error.response.data) {
+        setAnnouncement({
+          type: "error",
+          message: error.response.data.message,
+        });
+      } else {
+        setAnnouncement({ type: "error", message: "Send link failed!" });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +72,10 @@ export default function ForgotPassword() {
           onClose={() => setAnnouncement(null)} // đóng thông báo
         />
       )}
+
+      <div className="relative top-0 left-0">
+        {loading && <ElegantSpinner message="Sending..." />}
+      </div>
     </>
   );
 }

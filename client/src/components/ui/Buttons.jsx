@@ -6,7 +6,7 @@ export function PrimaryButton({ editStyle = "", title, ...rest }) {
       className={`
         text-black
         bg-[#eeeeee] 
-        rounded-xl 
+        rounded-xl  cursor-pointer
         hover:bg-[#CFCFCF] transition ${editStyle}
       `}
       {...rest}
@@ -38,7 +38,7 @@ export function DangerButton({ editStyle = "", title, ...rest }) {
       className={`
       text-white
       bg-gray-500
-      rounded-xl
+      rounded-xl cursor-pointer
       hover:bg-gray-700 transition ${editStyle}
       `}
       {...rest}
